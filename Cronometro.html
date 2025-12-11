@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Cronometro con note</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+    }
+    .page {
+      padding: 1rem;
+      padding-bottom: 6rem; /* spazio per i pulsanti floating */
+    }
+    .header-panel {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #f5f5f5;
+      padding-bottom: 0.5rem;
+    }
+    h1 {
+      font-size: 1.4rem;
+      margin: 0 0 0.5rem 0;
+      text-align: center;
+    }
+    #timer-display {
+      font-size: 2rem;
+      text-align: center;
+      margin: 1rem 0;
+    }
+    .top-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
+    button {
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+    button:active {
+      transform: scale(0.97);
+    }
+    #export-btn {
+      background: #616161;
+      color: #fff;
+    }
+    #copy-btn {
+      background: #00796b;
+      color: #fff;
+    }
+    .note-area {
+      margin: 0.5rem 0 0.5rem 0;
+    }
+    .note-area label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+    }
+    .note-area textarea {
+      width: 100%;
+      min-height: 60px;
+      font-size: 0.95rem;
+      padding: 0.4rem;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+
+    .columns-config {
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+      background: #e0e0e0;
+      border-radius: 6px;
+      padding: 0.4rem;
+    }
+    .columns-config h2 {
+      font-size: 0.9rem;
+      margin: 0 0 0.3rem 0;
+    }
+    .columns-config-row {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      margin-bottom: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .columns-config-row input[type="text"] {
+      flex: 1;
+      min-width: 120px;
+      padding: 0.2rem 0.3rem;
+      font-size: 0.8rem;
+      box-sizing: border-box;
+    }
+    .columns-config-row button {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.8rem;
+    }
+    .columns-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+    .column-chip {
+      background: #ffffff;
+      border-radius: 4px;
+      padding: 0.15rem 0.3rem;
+      border: 1px solid #bdbdbd;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+    .column-chip span {
+      font-size: 0.75rem;
+    }
+    .column-chip button {
+      padding: 0 0.25rem;
+      font-size: 0.7rem;
+      border-radius: 50%;
+      background: #e53935;
+      color: #fff;
+      border: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.3rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #eeeeee;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    th[contenteditable="true"] {
+      outline: none;
+      cursor: text;
+    }
+    td textarea {
+      width: 100%;
+      min-height: 40px;
+      font-size: 0.8rem;
+      border: none;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    .footer {
+      margin-top: 0.5rem;
+      font-size: 0.7rem;
+      text-align: center;
+      color: #777;
+      padding-bottom: 0.5rem;
+    }
+
+    /* Pulsante Giro floating, tondo in basso a destra */
+    #lap-btn {
+      position: fixed;
+      right: 1.2rem;
+      bottom: 1.5rem;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #1976d2;
+      color: #fff;
+      font-weight: bold;
+      font-size: 0.85rem;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+      z-index: 20;
+    }
+
+    /* Pulsante Stop/Start quadrato in basso a sinistra */
+    #start-stop-btn {
+      position: fixed;
+      left: 1.2rem;
+      bottom: 1.5rem;
+      width: 64px;
+      height: 64px;
+      border-radius: 8px;
+      background: #2e7d32; /* verde quando fermo */
+      color: #fff;
+      font-weight: bold;
+      font-size: 0.85rem;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header-panel">
+      <h1>Cronometro con note</h1>
+
+      <div id="timer-display">00:00.0</div>
+
+      <div class="top-controls">
+        <button id="export-btn">Estrai CSV</button>
+        <button id="copy-btn">Copia dati</button>
+      </div>
+
+      <div class="note-area">
+        <label for="note-input">Note proposte per il prossimo giro (facoltative, modificabili dopo):</label>
+        <textarea id="note-input" placeholder="Es. Mise en place – condizioni iniziali, istruzioni, ecc."></textarea>
+      </div>
+
+      <div class="columns-config">
+        <h2>Colonne extra</h2>
+        <div class="columns-config-row">
+          <input type="text" id="new-col-name" placeholder="Nome nuova colonna (es. Ritmo, Colli, Operatore)">
+          <button id="add-col-btn">Aggiungi colonna</button>
+        </div>
+        <div class="columns-list" id="columns-list">
+          <!-- chip colonne dinamiche -->
+        </div>
+      </div>
+    </div>
+
+    <table id="laps-table">
+      <thead>
+        <tr id="header-row">
+          <th>Giro</th>
+          <th>Tempo giro</th>
+          <th>Tempo totale</th>
+          <!-- intestazioni dinamiche -->
+        </tr>
+      </thead>
+      <tbody>
+        <!-- righe generate via JS -->
+      </tbody>
+    </table>
+
+    <div class="footer">
+      Prototipo per tempi e metodi – usa “Estrai CSV” o “Copia dati” per salvare/inviare i risultati.
+    </div>
+  </div>
+
+  <!-- Pulsanti floating -->
+  <button id="lap-btn" disabled>Giro</button>
+  <button id="start-stop-btn">Start</button>
+
+  <script>
+    let startTime = 0;
+    let elapsedTime = 0;   // ms
+    let intervalId = null;
+    let running = false;
+
+    let lastLapTime = 0;   // ms dal primo start
+    const laps = [];       // indice 0 = ultimo giro (ordine decrescente)
+
+    // Colonne dinamiche: {id, label}
+    const customColumns = [];
+
+    const display = document.getElementById('timer-display');
+    const startStopBtn = document.getElementById('start-stop-btn');
+    const lapBtn = document.getElementById('lap-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const copyBtn = document.getElementById('copy-btn');
+    const noteInput = document.getElementById('note-input');
+    const lapsTableBody = document.querySelector('#laps-table tbody');
+    const headerRow = document.getElementById('header-row');
+    const newColNameInput = document.getElementById('new-col-name');
+    const addColBtn = document.getElementById('add-col-btn');
+    const columnsList = document.getElementById('columns-list');
+
+    function formatTime(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      const tenths = Math.floor((ms % 1000) / 100);
+
+      const mm = String(minutes).padStart(2, '0');
+      const ss = String(seconds).padStart(2, '0');
+      return mm + ':' + ss + '.' + tenths;
+    }
+
+    function updateDisplay() {
+      const now = Date.now();
+      const currentElapsed = running ? elapsedTime + (now - startTime) : elapsedTime;
+      display.textContent = formatTime(currentElapsed);
+    }
+
+    function startTimer() {
+      startTime = Date.now();
+      intervalId = setInterval(updateDisplay, 100);
+      running = true;
+      startStopBtn.textContent = 'Stop';
+      startStopBtn.style.background = '#c62828'; // rosso
+      lapBtn.disabled = false;
+    }
+
+    function stopTimer() {
+      const now = Date.now();
+      elapsedTime += (now - startTime);
+      clearInterval(intervalId);
+      intervalId = null;
+      running = false;
+      startStopBtn.textContent = 'Start';
+      startStopBtn.style.background = '#2e7d32'; // verde
+      updateDisplay();
+      lapBtn.disabled = true;
+    }
+
+    function resetAll() {
+      if (running) return;
+      elapsedTime = 0;
+      lastLapTime = 0;
+      laps.length = 0;
+      lapsTableBody.innerHTML = '';
+      updateDisplay();
+    }
+
+    function addLap() {
+      const now = Date.now();
+      const currentTotal = running ? elapsedTime + (now - startTime) : elapsedTime;
+      const lapDuration = currentTotal - lastLapTime;
+      lastLapTime = currentTotal;
+
+      const note = noteInput.value.trim();
+
+      const lap = {
+        index: laps.length + 1,  // numerazione progressiva
+        lapMs: lapDuration,
+        totalMs: currentTotal,
+        custom: {}, // valori per colonne dinamiche
+        baseNote: note // se vuoi conservarla separata, opzionale
+      };
+
+      laps.unshift(lap);
+      renderAllLaps();
+
+      noteInput.value = '';
+    }
+
+    // Gestione colonne dinamiche
+    function addCustomColumn(label) {
+      const trimmed = label.trim();
+      if (!trimmed) return;
+      const id = 'col_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      customColumns.push({ id, label: trimmed });
+      // Aggiungi chiave vuota per tutti i laps
+      laps.forEach(l => {
+        if (!l.custom) l.custom = {};
+        l.custom[id] = '';
+      });
+      renderColumnsHeader();
+      renderColumnsChips();
+      renderAllLaps();
+      newColNameInput.value = '';
+    }
+
+    function removeCustomColumn(id) {
+      const idx = customColumns.findIndex(c => c.id === id);
+      if (idx === -1) return;
+      customColumns.splice(idx, 1);
+      laps.forEach(l => {
+        if (l.custom && id in l.custom) {
+          delete l.custom[id];
+        }
+      });
+      renderColumnsHeader();
+      renderColumnsChips();
+      renderAllLaps();
+    }
+
+    function renderColumnsHeader() {
+      // ricostruisci header: 3 colonne fisse + dinamiche
+      headerRow.innerHTML = '';
+      const th1 = document.createElement('th');
+      th1.textContent = 'Giro';
+      const th2 = document.createElement('th');
+      th2.textContent = 'Tempo giro';
+      const th3 = document.createElement('th');
+      th3.textContent = 'Tempo totale';
+      headerRow.appendChild(th1);
+      headerRow.appendChild(th2);
+      headerRow.appendChild(th3);
+
+      customColumns.forEach((col, index) => {
+        const th = document.createElement('th');
+        th.contentEditable = 'true';
+        th.textContent = col.label;
+        th.dataset.colId = col.id;
+        th.dataset.colIndex = index;
+        th.addEventListener('blur', () => {
+          const newLabel = th.textContent.trim();
+          if (newLabel) {
+            col.label = newLabel;
+            renderColumnsChips();
+          } else {
+            // se svuotato, ripristina vecchia etichetta
+            th.textContent = col.label;
+          }
+        });
+        headerRow.appendChild(th);
+      });
+
+      // Ultima colonna fissa "Note"
+      const thNote = document.createElement('th');
+      thNote.textContent = 'Note';
+      headerRow.appendChild(thNote);
+    }
+
+    function renderColumnsChips() {
+      columnsList.innerHTML = '';
+      customColumns.forEach(col => {
+        const chip = document.createElement('div');
+        chip.className = 'column-chip';
+        const span = document.createElement('span');
+        span.textContent = col.label;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = '×';
+        btn.addEventListener('click', () => {
+          removeCustomColumn(col.id);
+        });
+        chip.appendChild(span);
+        chip.appendChild(btn);
+        columnsList.appendChild(chip);
+      });
+    }
+
+    function renderAllLaps() {
+      lapsTableBody.innerHTML = '';
+      laps.forEach((lap, arrayIndex) => {
+        const tr = document.createElement('tr');
+        tr.dataset.arrayIndex = arrayIndex;
+
+        const tdIndex = document.createElement('td');
+        tdIndex.textContent = lap.index;
+
+        const tdLap = document.createElement('td');
+        tdLap.textContent = formatTime(lap.lapMs);
+
+        const tdTotal = document.createElement('td');
+        tdTotal.textContent = formatTime(lap.totalMs);
+
+        tr.appendChild(tdIndex);
+        tr.appendChild(tdLap);
+        tr.appendChild(tdTotal);
+
+        // colonne dinamiche
+        customColumns.forEach(col => {
+          const td = document.createElement('td');
+          const ta = document.createElement('textarea');
+          const value = (lap.custom && lap.custom[col.id]) ? lap.custom[col.id] : '';
+          ta.value = value;
+          ta.addEventListener('input', () => {
+            const i = parseInt(tr.dataset.arrayIndex, 10);
+            if (!isNaN(i) && laps[i]) {
+              if (!laps[i].custom) laps[i].custom = {};
+              laps[i].custom[col.id] = ta.value;
+            }
+          });
+          td.appendChild(ta);
+          tr.appendChild(td);
+        });
+
+        // colonna Note finale
+        const tdNote = document.createElement('td');
+        const textarea = document.createElement('textarea');
+        textarea.value = lap.note || lap.baseNote || '';
+        textarea.addEventListener('input', () => {
+          const i = parseInt(tr.dataset.arrayIndex, 10);
+          if (!isNaN(i) && laps[i]) {
+            laps[i].note = textarea.value;
+          }
+        });
+        tdNote.appendChild(textarea);
+        tr.appendChild(tdNote);
+
+        lapsTableBody.appendChild(tr);
+      });
+    }
+
+        function buildCSVText() {
+      // helper: format hh:mm:ss e decimo di secondo separato
+      function splitTime(ms) {
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const tenths = Math.floor((ms % 1000) / 100); // 0–9
+
+        const hh = String(hours).padStart(2, '0');
+        const mm = String(minutes).padStart(2, '0');
+        const ss = String(seconds).padStart(2, '0');
+
+        return {
+          hms: hh + ':' + mm + ':' + ss, // per Excel/lettura
+          tenths: tenths                 // numero 0–9
+        };
+      }
+
+      // intestazione
+      let header = [
+        'Giro',
+        'Tempo giro',
+        'Tempo giro ms',
+        'Tempo totale',
+        'Tempo totale ms'
+      ];
+      customColumns.forEach(col => header.push(col.label));
+      header.push('Note');
+
+      let csv = header.join(';') + '\n';
+
+      laps.forEach(lap => {
+        const lapTime = splitTime(lap.lapMs);
+        const totalTime = splitTime(lap.totalMs);
+
+        const row = [];
+        row.push(lap.index);
+        row.push(lapTime.hms);
+        row.push(lapTime.tenths);
+        row.push(totalTime.hms);
+        row.push(totalTime.tenths);
+
+        customColumns.forEach(col => {
+          const v = (lap.custom && lap.custom[col.id]) ? lap.custom[col.id] : '';
+          row.push('"' + v.replace(/"/g, '""') + '"');
+        });
+        const noteText = lap.note || lap.baseNote || '';
+        row.push('"' + noteText.replace(/"/g, '""') + '"');
+
+        csv += row.join(';') + '\n';
+      });
+
+      return csv;
+    }
+
+
+    function exportCSVFile() {
+      if (laps.length === 0) {
+        alert('Nessun giro registrato.');
+        return;
+      }
+      const csv = buildCSVText();
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tempi_metodi.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    async function copyCSVToClipboard() {
+      if (laps.length === 0) {
+        alert('Nessun giro registrato.');
+        return;
+      }
+      const csv = buildCSVText();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(csv);
+          alert('Dati copiati negli appunti. Ora puoi incollarli in una email o in Excel.');
+        } catch (e) {
+          fallbackCopy(csv);
+        }
+      } else {
+        fallbackCopy(csv);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand('copy');
+        alert('Dati copiati negli appunti. Ora puoi incollarli in una email o in Excel.');
+      } catch (e) {
+        alert('Impossibile copiare automaticamente. Seleziona e copia manualmente.');
+      }
+      document.body.removeChild(ta);
+    }
+
+    // Event listeners
+    startStopBtn.addEventListener('click', () => {
+      if (!running) {
+        startTimer();
+      } else {
+        stopTimer();
+      }
+    });
+
+    lapBtn.addEventListener('click', () => {
+      if (running) {
+        addLap();
+      }
+    });
+
+    exportBtn.addEventListener('click', exportCSVFile);
+    copyBtn.addEventListener('click', copyCSVToClipboard);
+
+    addColBtn.addEventListener('click', () => {
+      addCustomColumn(newColNameInput.value);
+    });
+
+    newColNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addCustomColumn(newColNameInput.value);
+      }
+    });
+
+    // Inizializzazione
+    renderColumnsHeader();
+    renderColumnsChips();
+    updateDisplay();
+  </script>
+</body>
+</html>
