@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronometro Tempi e Metodi con Note</title>
+    <style>
+        :root {
+            --color-primary: #32b8c6;
+            --color-primary-dark: #1d7481;
+            --color-bg: #f5f5f5;
+            --color-surface: #ffffff;
+            --color-text: #333;
+            --color-text-light: #666;
+            --color-border: #ddd;
+            --color-success: #4caf50;
+            --color-error: #f44336;
+            --color-green-light: #a5d6a7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .timer-display-header {
+            font-size: 40px;
+            font-weight: 700;
+            color: white;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: #757575;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #616161;
+        }
+
+        .btn-green-light {
+            background-color: var(--color-green-light);
+            color: #333;
+            font-weight: 600;
+        }
+
+        .btn-green-light:hover {
+            background-color: #81c784;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .main-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 100px;
+        }
+
+        .collapsed-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: auto;
+            flex-shrink: 0;
+        }
+
+        .container {
+            background-color: var(--color-surface);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            flex: 1;
+        }
+
+        .columns-wrapper {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 0;
+            align-items: flex-start;
+        }
+
+        .column {
+            flex: 0 0 250px;
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+            background-color: var(--color-bg);
+            border: 2px solid var(--color-border);
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        .column.collapsed {
+            flex: 0 0 auto;
+            width: 140px;
+            height: auto;
+            min-width: 140px;
+        }
+
+        .column.collapsed .rows-container {
+            display: none !important;
+        }
+
+        .column.collapsed .column-header {
+            flex-direction: column;
+            padding: 8px 4px;
+            height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .column.collapsed .column-title {
+            writing-mode: horizontal-tb;
+            transform: none;
+            white-space: normal;
+            font-size: 12px;
+            text-align: center;
+            width: 100%;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 8px 0;
+        }
+
+        .column.collapsed .column-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .column.dragging {
+            opacity: 0.5;
+        }
+
+        .column-header {
+            background-color: var(--color-primary);
+            color: white;
+            padding: 12px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--color-primary-dark);
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .column-title {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .column-controls {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .btn-icon {
+            background-color: rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            border: none;
+            transition: background-color 0.2s;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-collapse {
+            background-color: rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+        }
+
+        .btn-collapse:hover {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-collapse svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform 0.3s ease;
+        }
+
+        .column:not(.collapsed) .btn-collapse svg {
+            transform: scaleX(-1);
+        }
+
+        .column.collapsed .btn-collapse svg {
+            transform: scaleX(1);
+        }
+
+        .rows-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .row-item {
+            height: 60px;
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            padding: 8px;
+            flex-shrink: 0;
+        }
+
+        .row-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .row-item:last-child {
+            border-bottom: none;
+        }
+
+        .row-number {
+            font-weight: 600;
+            color: var(--color-primary);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .row-time {
+            font-weight: 600;
+            color: var(--color-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .row-input {
+            width: 100%;
+            height: 100%;
+            padding: 6px;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: 'Segoe UI', sans-serif;
+            resize: none;
+            overflow: auto;
+        }
+
+        .row-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(50, 184, 198, 0.1);
+        }
+
+        .current-row {
+            background-color: #e8f4f8;
+            border-bottom: 2px solid var(--color-primary);
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            flex-shrink: 0;
+        }
+
+        .current-row .row-input {
+            height: 100%;
+        }
+
+        .add-column-box {
+            flex: 0 0 250px;
+            border: 2px dashed var(--color-border);
+            border-radius: 8px;
+            background-color: var(--color-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 500px;
+        }
+
+        .add-column-box:hover {
+            border-color: var(--color-primary);
+            background-color: rgba(50, 184, 198, 0.05);
+        }
+
+        .add-column-content {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .add-column-icon {
+            font-size: 40px;
+            color: var(--color-primary);
+        }
+
+        .add-column-text {
+            color: var(--color-text-light);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .floating-action-bottom-left {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: var(--color-success);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            border: none;
+            font-size: 16px;
+        }
+
+        .floating-action-bottom-left:hover {
+            background-color: #45a049;
+        }
+
+        .floating-action-bottom-left.active {
+            background-color: var(--color-error);
+        }
+
+        .floating-action-bottom-left.active:hover {
+            background-color: #da190b;
+        }
+
+        .floating-action-bottom-right {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--color-success);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            border: none;
+            font-size: 16px;
+        }
+
+        .floating-action-bottom-right:hover {
+            background-color: #45a049;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 200;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--color-surface);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--color-text);
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .timer-display-header {
+                font-size: 28px;
+            }
+
+            .column {
+                flex: 0 0 180px;
+            }
+
+            .column.collapsed {
+                width: 120px;
+                min-width: 120px;
+            }
+
+            .add-column-box {
+                flex: 0 0 180px;
+            }
+
+            .floating-action-bottom-right {
+                width: 50px;
+                height: 50px;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⏱️ Cronometro - Tempi e Metodi</h1>
+        <div class="timer-display-header" id="timerDisplayHeader">00:00:00.00</div>
+        <div class="action-buttons">
+            <button class="btn-green-light btn-small" onclick="exportToCSV()">📊 Estrai CSV</button>
+            <button class="btn-primary btn-small" onclick="copyToClipboard()">📋 Copia Dati</button>
+            <button class="btn-secondary btn-small" onclick="clearAllData()">🗑️ Cancella Tutto</button>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <div class="collapsed-sidebar" id="collapsedSidebar"></div>
+        <div class="container">
+            <div class="columns-wrapper" id="columnsWrapper"></div>
+        </div>
+    </div>
+
+    <button id="startStopBtn" class="floating-action-bottom-left" onclick="toggleTimer()">▶ Start</button>
+    <button id="newGiroBtn" class="floating-action-bottom-right" onclick="addNewRow()" title="Nuovo Giro">Giro</button>
+
+    <div id="addColumnModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Aggiungi Nuova Colonna</div>
+            <input type="text" id="newColumnName" class="modal-input" placeholder="Es: Ritmo, Colli, Operatore...">
+            <div class="modal-buttons">
+                <button class="btn-secondary btn-small" onclick="closeAddColumnModal()">Annulla</button>
+                <button class="btn-primary btn-small" onclick="confirmAddColumn()">Aggiungi</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let columns = [
+            { id: 'giro', name: 'Giro', type: 'number', editable: false, collapsed: false },
+            { id: 'tempo_giro', name: 'Tempo Giro', type: 'time', editable: false, collapsed: false },
+            { id: 'tempo_totale', name: 'Tempo Totale', type: 'time', editable: false, collapsed: false }
+        ];
+        let rows = [];
+        let draggedColumn = null;
+        let timerInterval = null;
+        let isRunning = false;
+        let elapsedTime = 0;
+        let lastGiroTime = 0;
+
+        function loadData() {
+            const saved = localStorage.getItem('cronometroData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                columns = data.columns || columns;
+                rows = data.rows || [];
+            } else {
+                rows = [];
+            }
+            render();
+        }
+
+        function saveData() {
+            localStorage.setItem('cronometroData', JSON.stringify({ columns, rows }));
+        }
+
+        function formatTime(milliseconds) {
+            const totalSeconds = Math.floor(milliseconds / 1000);
+            const centiseconds = Math.floor((milliseconds % 1000) / 10);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}`;
+        }
+
+        function updateTimerDisplay() {
+            document.getElementById('timerDisplayHeader').textContent = formatTime(elapsedTime);
+            renderCurrentRow();
+        }
+
+        function toggleColumnCollapse(colId) {
+            const col = columns.find(c => c.id === colId);
+            if (col) {
+                col.collapsed = !col.collapsed;
+                saveData();
+                render();
+            }
+        }
+
+        function createCollapseIcon() {
+            return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <polyline points="8 6 14 12 8 18" />
+            </svg>`;
+        }
+
+        function createColumnElement(col, index) {
+            const columnEl = document.createElement('div');
+            columnEl.className = 'column' + (col.collapsed ? ' collapsed' : '');
+            columnEl.draggable = true;
+            columnEl.dataset.columnId = col.id;
+            columnEl.dataset.index = index;
+
+            const headerEl = document.createElement('div');
+            headerEl.className = 'column-header';
+
+            const titleEl = document.createElement('div');
+            titleEl.className = 'column-title';
+            titleEl.textContent = col.name;
+
+            const controlsEl = document.createElement('div');
+            controlsEl.className = 'column-controls';
+
+            const collapseBtn = document.createElement('button');
+            collapseBtn.className = 'btn-collapse';
+            collapseBtn.innerHTML = createCollapseIcon();
+            collapseBtn.title = col.collapsed ? 'Espandi' : 'Riduci';
+            collapseBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleColumnCollapse(col.id);
+            };
+            controlsEl.appendChild(collapseBtn);
+
+            if (col.editable !== false) {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-icon';
+                deleteBtn.textContent = '✕';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteColumn(col.id);
+                };
+                controlsEl.appendChild(deleteBtn);
+            }
+
+            headerEl.appendChild(titleEl);
+            headerEl.appendChild(controlsEl);
+            columnEl.appendChild(headerEl);
+
+            if (!col.collapsed) {
+                const rowsContainer = document.createElement('div');
+                rowsContainer.className = 'rows-container';
+
+                const currentRowEl = document.createElement('div');
+                currentRowEl.className = 'row-item current-row';
+
+                if (col.id === 'giro') {
+                    const span = document.createElement('span');
+                    span.className = 'row-number';
+                    span.id = 'current_giro';
+                    span.textContent = '#' + (rows.length + 1);
+                    currentRowEl.appendChild(span);
+                } else if (col.id === 'tempo_giro') {
+                    const span = document.createElement('span');
+                    span.className = 'row-time';
+                    span.id = 'current_tempo_giro';
+                    span.textContent = formatTime(elapsedTime - lastGiroTime);
+                    currentRowEl.appendChild(span);
+                } else if (col.id === 'tempo_totale') {
+                    const span = document.createElement('span');
+                    span.className = 'row-time';
+                    span.id = 'current_tempo_totale';
+                    span.textContent = formatTime(elapsedTime);
+                    currentRowEl.appendChild(span);
+                } else {
+                    const textarea = document.createElement('textarea');
+                    textarea.className = 'row-input';
+                    textarea.placeholder = 'Scrivi qui...';
+                    textarea.id = 'current_' + col.id;
+                    currentRowEl.appendChild(textarea);
+                }
+
+                rowsContainer.appendChild(currentRowEl);
+
+                rows.forEach((row) => {
+                    const rowEl = document.createElement('div');
+                    rowEl.className = 'row-item';
+
+                    if (col.id === 'giro') {
+                        const span = document.createElement('span');
+                        span.className = 'row-number';
+                        span.textContent = '#' + row.giro;
+                        rowEl.appendChild(span);
+                    } else if (col.id === 'tempo_giro') {
+                        const span = document.createElement('span');
+                        span.className = 'row-time';
+                        span.textContent = row.tempo_giro;
+                        rowEl.appendChild(span);
+                    } else if (col.id === 'tempo_totale') {
+                        const span = document.createElement('span');
+                        span.className = 'row-time';
+                        span.textContent = row.tempo_totale;
+                        rowEl.appendChild(span);
+                    } else {
+                        const value = row[col.id] || '';
+                        const input = document.createElement('input');
+                        input.className = 'row-input';
+                        input.type = 'text';
+                        input.value = value;
+                        input.onchange = () => {
+                            row[col.id] = input.value;
+                            saveData();
+                        };
+                        rowEl.appendChild(input);
+                    }
+
+                    rowsContainer.appendChild(rowEl);
+                });
+
+                columnEl.appendChild(rowsContainer);
+            }
+
+            columnEl.addEventListener('dragstart', handleDragStart);
+            columnEl.addEventListener('dragover', handleDragOver);
+            columnEl.addEventListener('drop', handleDrop);
+            columnEl.addEventListener('dragend', handleDragEnd);
+
+            return columnEl;
+        }
+
+        function render() {
+            const wrapper = document.getElementById('columnsWrapper');
+            const sidebar = document.getElementById('collapsedSidebar');
+            wrapper.innerHTML = '';
+            sidebar.innerHTML = '';
+
+            columns.forEach((col, index) => {
+                const columnEl = createColumnElement(col, index);
+                
+                if (col.collapsed) {
+                    sidebar.appendChild(columnEl.cloneNode(true));
+                    sidebar.lastChild.addEventListener('dragstart', handleDragStart);
+                    sidebar.lastChild.addEventListener('dragover', handleDragOver);
+                    sidebar.lastChild.addEventListener('drop', handleDrop);
+                    sidebar.lastChild.addEventListener('dragend', handleDragEnd);
+                    sidebar.lastChild.querySelector('.btn-collapse').onclick = (e) => {
+                        e.stopPropagation();
+                        toggleColumnCollapse(col.id);
+                    };
+                    if (sidebar.lastChild.querySelector('.btn-icon')) {
+                        sidebar.lastChild.querySelector('.btn-icon').onclick = (e) => {
+                            e.stopPropagation();
+                            deleteColumn(col.id);
+                        };
+                    }
+                } else {
+                    wrapper.appendChild(columnEl);
+                }
+            });
+
+            const addBoxEl = document.createElement('div');
+            addBoxEl.className = 'add-column-box';
+            addBoxEl.onclick = showAddColumnModal;
+            addBoxEl.innerHTML = `
+                <div class="add-column-content">
+                    <div class="add-column-icon">+</div>
+                    <div class="add-column-text">Aggiungi<br>colonna</div>
+                </div>
+            `;
+            wrapper.appendChild(addBoxEl);
+        }
+
+        function renderCurrentRow() {
+            const giroSpan = document.querySelector('[id="current_giro"]');
+            const giroTimeSpan = document.querySelector('[id="current_tempo_giro"]');
+            const totaleSpan = document.querySelector('[id="current_tempo_totale"]');
+            
+            if (giroSpan) giroSpan.textContent = '#' + (rows.length + 1);
+            if (giroTimeSpan) giroTimeSpan.textContent = formatTime(elapsedTime - lastGiroTime);
+            if (totaleSpan) totaleSpan.textContent = formatTime(elapsedTime);
+        }
+
+        function handleDragStart(e) {
+            draggedColumn = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            if (draggedColumn && draggedColumn !== this) {
+                const draggedIndex = parseInt(draggedColumn.dataset.index);
+                const targetIndex = parseInt(this.dataset.index);
+
+                if (draggedIndex !== -1 && targetIndex !== -1) {
+                    [columns[draggedIndex], columns[targetIndex]] = [columns[targetIndex], columns[draggedIndex]];
+                    saveData();
+                    render();
+                }
+            }
+        }
+
+        function handleDragEnd() {
+            if (draggedColumn) draggedColumn.classList.remove('dragging');
+            draggedColumn = null;
+        }
+
+        function showAddColumnModal() {
+            const modal = document.getElementById('addColumnModal');
+            const input = document.getElementById('newColumnName');
+            input.value = '';
+            modal.classList.add('show');
+            input.focus();
+        }
+
+        function closeAddColumnModal() {
+            document.getElementById('addColumnModal').classList.remove('show');
+        }
+
+        function confirmAddColumn() {
+            const input = document.getElementById('newColumnName');
+            const name = input.value.trim();
+            if (name) {
+                const id = 'col_' + Date.now();
+                columns.push({ id, name, type: 'text', editable: true, collapsed: false });
+                rows.forEach(row => {
+                    row[id] = '';
+                });
+                saveData();
+                render();
+                closeAddColumnModal();
+            }
+        }
+
+        function deleteColumn(id) {
+            if (confirm(`Vuoi eliminare la colonna?`)) {
+                columns = columns.filter(col => col.id !== id);
+                rows = rows.map(row => {
+                    const { [id]: _, ...rest } = row;
+                    return rest;
+                });
+                saveData();
+                render();
+            }
+        }
+
+        function addNewRow() {
+            const previousTotalTime = elapsedTime;
+            const giroTime = elapsedTime - lastGiroTime;
+            lastGiroTime = elapsedTime;
+
+            const newRow = {
+                giro: rows.length + 1,
+                tempo_giro: formatTime(giroTime),
+                tempo_totale: formatTime(previousTotalTime)
+            };
+
+            columns.forEach(col => {
+                if (col.id !== 'giro' && col.id !== 'tempo_giro' && col.id !== 'tempo_totale') {
+                    const currentVal = document.getElementById('current_' + col.id);
+                    newRow[col.id] = currentVal ? currentVal.value : '';
+                }
+            });
+
+            rows.unshift(newRow);
+            rows.forEach((row, i) => {
+                row.giro = rows.length - i;
+            });
+
+            columns.forEach(col => {
+                if (col.id !== 'giro' && col.id !== 'tempo_giro' && col.id !== 'tempo_totale') {
+                    const textarea = document.getElementById('current_' + col.id);
+                    if (textarea) textarea.value = '';
+                }
+            });
+
+            saveData();
+            render();
+        }
+
+        // Parsing tempo: "HH:MM:SS.CC" -> { base: "HH:MM:SS", dec: "CC" }
+        function splitTime(timeStr) {
+            if (!timeStr) return { base: '', dec: '' };
+            const parts = timeStr.split('.');
+            if (parts.length === 2) {
+                return { base: parts[0], dec: parts[1] };
+            }
+            return { base: timeStr, dec: '' };
+        }
+
+        function copyToClipboard() {
+            if (rows.length === 0) {
+                alert('Nessun dato da copiare');
+                return;
+            }
+
+            // Header: aggiungo colonne decimali
+            let header = columns.map(col => col.name);
+            header.splice(2, 0, 'Tempo Giro decimali');   // dopo Tempo Giro
+            header.splice(4, 0, 'Tempo Totale decimali'); // dopo Tempo Totale
+            let text = header.join(';') + '\n';
+
+            rows.forEach(row => {
+                const tg = splitTime(row.tempo_giro);
+                const tt = splitTime(row.tempo_totale);
+
+                const values = [];
+                columns.forEach(col => {
+                    if (col.id === 'tempo_giro') {
+                        values.push(tg.base);
+                    } else if (col.id === 'tempo_totale') {
+                        values.push(tt.base);
+                    } else {
+                        values.push(row[col.id] || '');
+                    }
+
+                    if (col.id === 'tempo_giro') {
+                        values.push(tg.dec);
+                    }
+                    if (col.id === 'tempo_totale') {
+                        values.push(tt.dec);
+                    }
+                });
+
+                text += values.join(';') + '\n';
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Dati copiati negli appunti!');
+            }).catch(() => {
+                alert('Errore nella copia');
+            });
+        }
+
+        function exportToCSV() {
+            if (rows.length === 0) {
+                alert('Nessun dato da esportare');
+                return;
+            }
+
+            // Header CSV con colonne decimali
+            let headerCols = columns.map(col => col.name);
+            headerCols.splice(2, 0, 'Tempo Giro decimali');
+            headerCols.splice(4, 0, 'Tempo Totale decimali');
+            let csv = headerCols.map(col => `"${col}"`).join(';') + '\n';
+
+            rows.forEach(row => {
+                const tg = splitTime(row.tempo_giro);
+                const tt = splitTime(row.tempo_totale);
+
+                const vals = [];
+                columns.forEach(col => {
+                    let value = row[col.id] || '';
+
+                    if (col.id === 'tempo_giro') {
+                        value = tg.base;
+                    } else if (col.id === 'tempo_totale') {
+                        value = tt.base;
+                    }
+
+                    value = value.toString().replace(/"/g, '""');
+                    vals.push(`"${value}"`);
+
+                    if (col.id === 'tempo_giro') {
+                        const d = tg.dec.toString().replace(/"/g, '""');
+                        vals.push(`"${d}"`);
+                    }
+                    if (col.id === 'tempo_totale') {
+                        const d2 = tt.dec.toString().replace(/"/g, '""');
+                        vals.push(`"${d2}"`);
+                    }
+                });
+
+                csv += vals.join(';') + '\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `cronometro_${new Date().toISOString().slice(0, 10)}.csv`;
+            link.click();
+        }
+
+        function clearAllData() {
+            if (confirm('Sei sicuro di voler eliminare TUTTI i dati?')) {
+                columns = [
+                    { id: 'giro', name: 'Giro', type: 'number', editable: false, collapsed: false },
+                    { id: 'tempo_giro', name: 'Tempo Giro', type: 'time', editable: false, collapsed: false },
+                    { id: 'tempo_totale', name: 'Tempo Totale', type: 'time', editable: false, collapsed: false }
+                ];
+                rows = [];
+                elapsedTime = 0;
+                lastGiroTime = 0;
+                isRunning = false;
+                clearInterval(timerInterval);
+                updateTimerDisplay();
+                updateStartStopButton();
+                saveData();
+                render();
+            }
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('startStopBtn');
+            if (!isRunning) {
+                isRunning = true;
+                btn.textContent = '⏹ Stop';
+                btn.classList.add('active');
+                const startTime = Date.now() - elapsedTime;
+                timerInterval = setInterval(() => {
+                    elapsedTime = Date.now() - startTime;
+                    updateTimerDisplay();
+                }, 10);
+            } else {
+                isRunning = false;
+                btn.textContent = '▶ Start';
+                btn.classList.remove('active');
+                clearInterval(timerInterval);
+            }
+        }
+
+        function updateStartStopButton() {
+            const btn = document.getElementById('startStopBtn');
+            if (isRunning) {
+                btn.textContent = '⏹ Stop';
+                btn.classList.add('active');
+            } else {
+                btn.textContent = '▶ Start';
+                btn.classList.remove('active');
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeAddColumnModal();
+            }
+            if (e.key === 'Enter' && document.activeElement === document.getElementById('newColumnName')) {
+                confirmAddColumn();
+            }
+        });
+
+        loadData();
+        updateTimerDisplay();
+    </script>
+</body>
+</html>
