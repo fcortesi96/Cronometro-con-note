@@ -174,8 +174,8 @@
         }
 
         .column {
-            flex: 0 0 145px;
-            min-width: 145px;
+            flex: 0 0 120px;
+            min-width: 120px;
             display: flex;
             flex-direction: column;
             border-radius: 6px;
@@ -389,8 +389,8 @@
         }
 
         .add-column-box {
-            flex: 0 0 145px;
-            min-width: 145px;
+            flex: 0 0 120px;
+            min-width: 120px;
             border: 2px dashed var(--color-border);
             border-radius: 6px;
             background-color: var(--color-bg);
@@ -636,10 +636,18 @@
             }
         }
 
-        function createCollapseIcon() {
-            return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        function createCollapseIcon(isCollapsed) {
+            if (isCollapsed) {
+                // Freccia a DESTRA → quando la colonna è chiusa (puoi aprirla)
+                return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <polyline points="8 6 14 12 8 18" />
-            </svg>`;
+              </svg>`;
+            } else {
+                // Freccia a SINISTRA ← quando la colonna è aperta (puoi chiuderla)
+                return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <polyline points="16 6 10 12 16 18" />
+             </svg>`;
+            }
         }
 
         function createColumnElement(col, index) {
@@ -661,7 +669,7 @@
 
             const collapseBtn = document.createElement('button');
             collapseBtn.className = 'btn-collapse';
-            collapseBtn.innerHTML = createCollapseIcon();
+            collapseBtn.innerHTML = createCollapseIcon(col.collapsed);
             collapseBtn.title = col.collapsed ? 'Espandi' : 'Riduci';
             collapseBtn.onclick = (e) => {
                 e.stopPropagation();
