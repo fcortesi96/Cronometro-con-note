@@ -433,15 +433,15 @@
             left: 12px;
             background-color: var(--color-success);
             color: white;
-            padding: 10px 16px;
+            padding: 14px 24px;
             border-radius: 24px;
             font-weight: 600;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
             z-index: 100;
             border: none;
-            font-size: 12px;
-            min-height: 44px;
+            font-size: 14px;
+            min-height: 52px;
             touch-action: manipulation;
         }
 
@@ -465,15 +465,15 @@
             right: 12px;
             background-color: var(--color-success);
             color: white;
-            padding: 10px 16px;
+            padding: 14px 24px;
             border-radius: 24px;
             font-weight: 600;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
             z-index: 100;
             border: none;
-            font-size: 12px;
-            min-height: 44px;
+            font-size: 14px;
+            min-height: 52px;
             touch-action: manipulation;
         }
 
@@ -1040,11 +1040,6 @@
 
         function clearAllData() {
             if (confirm('Eliminare TUTTI i dati?')) {
-                columns = [
-                    { id: 'giro', name: 'Giro', type: 'number', editable: false, collapsed: false },
-                    { id: 'tempo_giro', name: 'Tempo Giro', type: 'time', editable: false, collapsed: false },
-                    { id: 'tempo_totale', name: 'Tempo Totale', type: 'time', editable: false, collapsed: false }
-                ];
                 rows = [];
                 elapsedTime = 0;
                 lastGiroTime = 0;
